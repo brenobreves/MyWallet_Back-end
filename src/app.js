@@ -66,7 +66,8 @@ app.post("/sign-in", async(req,res) => {
         if(!bcrypt.compareSync(senha, user.senha)) return res.status(401).send("Senha incorreta")
         const token = uuid()
         await db.collection("sessoes").insertOne({email, token})
-        res.status(200).send(token)
+        delete user.senha
+        res.status(200).send({...user, token})
 
     } catch (err) {
         return res.status(500).send(err.message)
