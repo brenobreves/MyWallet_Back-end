@@ -73,5 +73,5 @@ app.post("/sign-in", async(req,res) => {
     }    
 })
 
-const PORT = 5000;
-app.listen(PORT , () => console.log(`App rodando na porta ${PORT}`));    
+const port = process.env.PORT || 5000;
+app.listen(port , () => console.log(`App rodando na porta ${port}`));    
