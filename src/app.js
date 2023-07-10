@@ -82,7 +82,7 @@ app.post("/trans/:tipo", async(req,res) => {
     if(!token) return res.status(401).send("Requisição sem token de validação")
     token = token.replace("Bearer ","")
     const tipo = req.params.tipo
-    if(tipo !== "saída" && tipo !== "entrada") return res.status(422).send("Tipo de operação não localizada/permitida")
+    if(tipo !== "saida" && tipo !== "entrada") return res.status(422).send("Tipo de operação não localizada/permitida")
     const schemaTrans = Joi.object({
         valor: Joi.number().positive().required(),
         desc: Joi.string().required()
@@ -97,6 +97,7 @@ app.post("/trans/:tipo", async(req,res) => {
             const errors = validation.error.details.map(detail => detail.message);
             return res.status(422).send(errors); 
         }
+        valor = Number(valor)
         const valorteste = Math.floor(valor*100)/100
         if(valor !== valorteste){
             return res.status(422).send("Valor com mais de 2 casas decimais")
@@ -109,7 +110,7 @@ app.post("/trans/:tipo", async(req,res) => {
             data: dayjs().format("DD/MM")
         }
         await db.collection("trans").insertOne(transObj)
-        if(tipo === "saída"){
+        if(tipo === "saida"){
             await db.collection("users").updateOne({email: sessao.email},{$inc:{saldo: -valor}})
             return res.status(201).send("Transação aceita, saldo atualizado")
         }else{
