@@ -78,14 +78,14 @@ app.post("/sign-in", async(req,res) => {
 //Post transação
 
 app.post("/trans/:tipo", async(req,res) => {
-    let token = req.headers.token
+    let token = req.headers.authorization
     if(!token) return res.status(401).send("Requisição sem token de validação")
     token = token.replace("Bearer ","")
     const tipo = req.params.tipo
     if(tipo !== "saida" && tipo !== "entrada") return res.status(422).send("Tipo de operação não localizada/permitida")
     const schemaTrans = Joi.object({
         valor: Joi.number().positive().required(),
-        desc: Joi.string().required()
+        desc: Joi.string().max(20).required()
     })
 
     let {valor , desc} = req.body
@@ -97,31 +97,48 @@ app.post("/trans/:tipo", async(req,res) => {
             const errors = validation.error.details.map(detail => detail.message);
             return res.status(422).send(errors); 
         }
-        valor = Number(valor)
-        const valorteste = Math.floor(valor*100)/100
+        valor = Number(valor)     
+        let valorteste = Math.floor(valor*100)/100
         if(valor !== valorteste){
             return res.status(422).send("Valor com mais de 2 casas decimais")
         }
         const transObj = {
             email: sessao.email,
             tipo,
-            valor,
+            valor: valor.toFixed(2),
             desc,
             data: dayjs().format("DD/MM")
         }
         await db.collection("trans").insertOne(transObj)
         if(tipo === "saida"){
             await db.collection("users").updateOne({email: sessao.email},{$inc:{saldo: -valor}})
-            return res.status(201).send("Transação aceita, saldo atualizado")
         }else{
             await db.collection("users").updateOne({email: sessao.email},{$inc:{saldo: valor}})
-            return res.status(201).send("Transação aceita, saldo atualizado")
         }
-
+        const usuario = await db.collection("users").findOne({email: sessao.email})
+        delete usuario._id
+        delete usuario.senha
+        return res.status(201).send(usuario)
     } catch (err) {
         return res.status(500).send(err.message)
     }
     })
+
+//Get trans
+
+app.get("/transactions", async(req,res)=>{
+    let token = req.headers.authorization
+    if(!token) return res.status(401).send("Requisição sem token de validação")
+    token = token.replace("Bearer ","")
+    try {
+        const sessao = await db.collection("sessoes").findOne({token}) 
+        if(!sessao) return res.status(401).send("Token inválido ou inativo")
+        const trans = (await db.collection("trans").find({email: sessao.email}).toArray()).reverse()
+        return res.send(trans)
+    } catch (err) {
+        return res.status(500).send(err.message)   
+    }
+})
 
 const port = process.env.PORT || 5000;
 app.listen(port , () => console.log(`App rodando na porta ${port}`));    
