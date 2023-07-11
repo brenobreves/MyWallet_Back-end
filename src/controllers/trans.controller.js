@@ -4,9 +4,12 @@ import { db } from "../database/database.connection.js";
 
 export async function postTrans(req,res){
     const tipo = req.params.tipo
+    const {authorization} = req.headers
+    const token = authorization.replace("Bearer ","")
     if(tipo !== "saida" && tipo !== "entrada") return res.status(422).send("Tipo de operação não localizada/permitida")
     let {valor , desc} = req.body
-    try {         
+    try { 
+        const sessao = await db.collection("sessoes").findOne({token})        
         valor = Number(valor)     
         let valorteste = Math.floor(valor*100)/100
         if(valor !== valorteste){
