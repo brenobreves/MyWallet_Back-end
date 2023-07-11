@@ -35,6 +35,8 @@ export async function postTrans(req,res){
 }
 
 export async function getTrans(req,res){
+    const {authorization} = req.headers
+    const token = authorization.replace("Bearer ","")
     try {
         const sessao = await db.collection("sessoes").findOne({token}) 
         const trans = (await db.collection("trans").find({email: sessao.email}).toArray()).reverse()
