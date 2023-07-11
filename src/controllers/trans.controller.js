@@ -11,7 +11,7 @@ export async function postTrans(req,res){
     try { 
         const sessao = await db.collection("sessoes").findOne({token})        
         valor = Number(valor)     
-        let valorteste = Math.floor(valor*100)/100
+        let valorteste = Math.floor(valor*10*10)/100
         if(valor !== valorteste){
             return res.status(422).send("Valor com mais de 2 casas decimais")
         }
